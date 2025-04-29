@@ -33,7 +33,9 @@ function Header() {
             aria-expanded={isExpanded}
             aria-label="Toggle navigation"
           >
-            <span className="navbar-toggler-icon"></span>
+            <span className="navbar-toggler-icon" style={{ color: "white" }}>
+              Menu
+            </span>
           </button>
 
           {/* Navigation content - CRITICAL FIX - force display with inline styles */}
