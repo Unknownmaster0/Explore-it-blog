@@ -17,4 +17,22 @@ urlpatterns = [
     path('post/like-post/', api_views.LikePostApiView.as_view(), name='like-post'),
     path('post/bookmark-post/', api_views.BookmarkPostApiView.as_view(), name='bookmark-post'),
     path('post/comment/', api_views.PostCommentApiView.as_view(), name='post-comment'),
+
+    # author dashboard urls/routes
+    path('author/dashboard/stats<user_id>/', api_views.DashboardStatsView.as_view(), name='dashboard-stats'),
+
+    path('author/dashbaord/posts/<user_id>/', api_views.DashboardPostListsView.as_view(), name='dashboard-post-list'),
+
+    path('author/dashboard/comments/<user_id>/', api_views.DashboardCommentListsView.as_view(), name='dashboard-comment-list'),
+
+    path('author/dashboard/notifications/<user_id>/', api_views.DashboardNotificationListsView.as_view(), name='dashboard-notification-list'),
+
+    path('author/dashboard/mark-notification/<notification_id>/', api_views.DashboardMarkNotificationSeenApiView.as_view(), name='dashboard-mark-notification-seen'),
+
+    path('author/dashboard/reply-comment/<comment_id>/', api_views.DashboardReplyCommentApiView.as_view(), name='dashboard-reply-comment'),
+
+    path('author/dashboard/post-create/', api_views.DashboardPostCreateApiView.as_view(), name='dashboard-post-create'),
+
+    path('author/dashboard/update-post/<user_id>/<post_id>/', api_views.DashboardPostUpdateApiView.as_view(), name='dashboard-post-update'),
+    
 ]
