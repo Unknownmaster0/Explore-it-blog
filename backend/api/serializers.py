@@ -73,3 +73,37 @@ class ProfileSerializer(serializers.ModelSerializer):
         response = super().to_representation(instance)
         response['user'] = UserSerializer(instance.user).data
         return response
+
+class CategorySerializer(serializers.ModelSerializer): 
+    post_count = serializers.SerializerMethodField()
+
+    def get_post_cnt(self, category): 
+        return category.posts.count()
+    
+    class Meta:
+        model = api_models.Category
+        fields = ['id', 'title', 'image', 'slug', 'post_count']
+
+    def __init__(self, *args, **kwargs):
+        # Call the parent class's __init__ method
+        super(CategorySerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST': 
+            self.Meta.depth = 0
+        else: 
+            self.Meta.depth = 3
+
+
+class CommentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = api_models.Comment
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super(CommentSerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST':
+            self.Meta.depth = 0
+        else:
+            self.Meta.depth = 1
+
