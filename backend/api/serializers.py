@@ -124,7 +124,7 @@ class PostSerializer(serializers.ModelSerializer):
 
 class BookmarksSerializer(serializers.ModelSerializer): 
     class Meta: 
-        model = api_models.Bookmarks
+        model = api_models.Bookmark
         fields = "__all__"
 
     def __init__(self, *args, **kwargs):

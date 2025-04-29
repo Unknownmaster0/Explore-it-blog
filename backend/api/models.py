@@ -12,7 +12,7 @@ class User(AbstractUser):
     email = models.EmailField(unique=True) 
     full_name = models.CharField(max_length=100, null=True, blank=True)
 
-    REQUIRED_FIELDS = ['email']
+    REQUIRED_FIELDS = ['email', 'full_name']
     
     def __str__(self):
         return self.email
