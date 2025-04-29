@@ -1,0 +1,42 @@
+# Python/Django specific
+__pycache__/
+*.py[cod]
+*.sqlite3
+*.log
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Virtual environment
+venv/
+env/
+env.bak/
+venv.bak/
+
+# Django migrations (keep migrations folder in version control if needed)
+# Comment this out if you want to track migrations
+# migrations/
+
+# IDE/editor files
+.idea/
+*.sublime-project
+*.sublime-workspace
+.vscode/
+
+# OS generated files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+dist/
+build/
+
+# Node.js (if you add frontend later)
+node_modules/
+npm-debug.log*
+
+# Heroku
+.slug/
