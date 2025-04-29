@@ -107,3 +107,49 @@ class CommentSerializer(serializers.ModelSerializer):
         else:
             self.Meta.depth = 1
 
+class PostSerializer(serializers.ModelSerializer):
+    comments = CommentSerializer(many=True)
+    
+    class Meta:
+        model = api_models.Post
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super(PostSerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST':
+            self.Meta.depth = 0
+        else:
+            self.Meta.depth = 3
+
+class BookmarksSerializer(serializers.ModelSerializer): 
+    class Meta: 
+        model = api_models.Bookmarks
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super(BookmarksSerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST':
+            self.Meta.depth = 0
+        else:
+            self.Meta.depth = 3
+
+class NotificationSerializer(serializers.ModelSerializer): 
+    class Meta: 
+        model = api_models.Notification
+        fields = "__all__"
+
+    def __init__(self, *args, **kwargs):
+        super(NotificationSerializer, self).__init__(*args, **kwargs)
+        request = self.context.get('request')
+        if request and request.method == 'POST':
+            self.Meta.depth = 0
+        else:
+            self.Meta.depth = 3
+
+class AuthorStats(serializers.Serializer): 
+    views = serializers.IntegerField(default=0)
+    posts = serializers.IntegerField(default=0)
+    likes = serializers.IntegerField(default=0)
+    bookmarks = serializers.IntegerField(default=0)
