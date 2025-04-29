@@ -15,7 +15,13 @@ function Header() {
         <div className="container">
           {/* Logo */}
           <Link className="navbar-brand" to="/">
-            <h1 className="text-zinc-200">Explore-it</h1>
+            <h1
+              style={{
+                color: "#E4E4E7",
+              }}
+            >
+              Explore-it
+            </h1>
           </Link>
 
           {/* Mobile toggle button */}
