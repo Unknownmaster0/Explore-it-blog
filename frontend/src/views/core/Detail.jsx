@@ -16,6 +16,8 @@ function Detail() {
     comment: "",
   });
 
+  console.log(post);
+
   const param = useParams();
 
   const fetchPost = async () => {
@@ -124,15 +126,18 @@ function Detail() {
                         objectFit: "cover",
                         borderRadius: "50%",
                       }}
-                      src={post.profile?.image}
+                      src={
+                        post.profile?.image ||
+                        "https://as1.ftcdn.net/v2/jpg/03/53/11/00/1000_F_353110097_nbpmfn9iHlxef4EDIhXB1tdTD0lcWhG9.jpg"
+                      }
                       alt="avatar"
                     />
                   </div>
                   <a
                     href="#"
-                    className="h5 fw-bold text-dark text-decoration-none mt-2 mb-0 d-block"
+                    className="h5 fw-bold text-dark text-decoration-none mt-2 mb-0 d-block mr-15"
                   >
-                    {post.profile?.full_name}
+                    {post.user?.full_name}
                   </a>
                   <p>{post.profile?.bio}</p>
                 </div>
@@ -141,9 +146,6 @@ function Detail() {
                   <li className="list-inline-item d-lg-block my-lg-2 text-start">
                     <i className="fas fa-calendar"></i> {moment(post.date)}
                   </li>
-                  {/* <li className="list-inline-item d-lg-block my-lg-2 text-start">
-                    <i className="fas fa-clock"></i> 5 min read
-                  </li> */}
                   <li className="list-inline-item d-lg-block my-lg-2 text-start">
                     <a href="#" className="text-body">
                       <i className="fas fa-heart me-1" />
@@ -183,6 +185,31 @@ function Detail() {
 
             {/* Main Content START */}
             <div className="col-lg-10 mb-5">
+              {post.image && (
+                <div className="container">
+                  <div className="row justify-content-center">
+                    <div className="col-12 col-md-10 col-lg-8">
+                      <div className="text-center mt-4 mb-5">
+                        <img
+                          src={post.image}
+                          alt={post.title}
+                          className="img-fluid rounded shadow"
+                          style={{
+                            width: "100%",
+                            height: "auto",
+                            maxHeight: "500px", // Increased max height
+                            objectFit: "contain", // Changed from cover to contain
+                            display: "block", // Ensures proper centering
+                            margin: "0 auto", // Center the image horizontally
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <hr />
               <p dangerouslySetInnerHTML={{ __html: post.description }}></p>
 
               <hr />

@@ -1,9 +1,54 @@
-import React from "react";
+import React, { useState } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { login } from "../../utils/auth";
 
 function Login() {
+  const [bioData, setBioData] = useState({ email: "", password: "" });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleBioDataChange = (event) => {
+    setBioData({
+      ...bioData,
+      [event.target.name]: event.target.value,
+    });
+  };
+
+  const resetForm = () => {
+    setBioData({
+      email: "",
+      password: "",
+    });
+  };
+
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    try {
+      const { error } = await login(bioData.email, bioData.password);
+      if (error) {
+        Toast.fire({
+          icon: "error",
+          title: error,
+        });
+        resetForm();
+      } else {
+        navigate(location?.state?.from || "/dashboard");
+      }
+    } catch (err) {
+      Toast.fire({
+        icon: "error",
+        title: "Login failed",
+      });
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <Header />
@@ -25,7 +70,11 @@ function Login() {
                   </span>
                 </div>
                 {/* Form */}
-                <form className="needs-validation" noValidate="">
+                <form
+                  className="needs-validation"
+                  noValidate=""
+                  onSubmit={handleLogin}
+                >
                   {/* Username */}
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label">
@@ -33,6 +82,8 @@ function Login() {
                     </label>
                     <input
                       type="email"
+                      onChange={handleBioDataChange}
+                      value={bioData.email}
                       id="email"
                       className="form-control"
                       name="email"
@@ -50,6 +101,8 @@ function Login() {
                     </label>
                     <input
                       type="password"
+                      onChange={handleBioDataChange}
+                      value={bioData.password}
                       id="password"
                       className="form-control"
                       name="password"
@@ -60,11 +113,24 @@ function Login() {
                       Please enter valid password.
                     </div>
                   </div>
-                  {/* button */}
                   <div>
                     <div className="d-grid">
-                      <button type="submit" className="btn btn-primary">
-                        Sign in <i className="fas fa-sign-in-alt"></i>
+                      <button
+                        className="btn btn-primary w-100"
+                        type="submit"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="mr-2 ">Processing...</span>
+                            <i className="fas fa-spinner fa-spin" />
+                          </>
+                        ) : (
+                          <>
+                            <span className="mr-2">Sign In </span>
+                            <i className="fas fa-sign-in-alt" />
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

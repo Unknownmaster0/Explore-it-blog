@@ -134,15 +134,18 @@ export const setAuthUser = (access_token, refresh_token) => {
 };
 
 // Function to refresh the access token using the refresh token
-export const getRefreshToken = async () => {
+export const getRefreshToken = async (refresh_token) => {
   // Retrieving refresh token from cookies and making a POST request to refresh the access token
-  const refresh_token = Cookies.get("refresh_token");
-  const response = await axios.post("user/token/refresh/", {
-    refresh: refresh_token,
-  });
-
-  // Returning the refreshed access token
-  return response.data;
+  try {
+    const response = await axios.post("user/token/refresh/", {
+      refresh: refresh_token,
+    });
+    return response.data;
+  } catch (error) {
+    Cookies.remove("access_token");
+    Cookies.remove("refresh_token");
+    throw error;
+  }
 };
 
 // Function to check if the access token is expired
@@ -155,4 +158,28 @@ export const isAccessTokenExpired = (accessToken) => {
     // Returning true if the token is invalid or expired
     return true;
   }
+};
+
+// function to check if there is access and refresh token valid
+export const checkAuthStatus = async () => {
+  const accessToken = Cookies.get("access_token");
+  const refreshToken = Cookies.get("refresh_token");
+
+  if (!refreshToken) {
+    logout();
+    return false;
+  }
+
+  if (!accessToken || isAccessTokenExpired(accessToken)) {
+    try {
+      const response = await getRefreshToken(refreshToken);
+      setAuthUser(response.access, refreshToken);
+      return true;
+    } catch (error) {
+      logout();
+      return false;
+    }
+  }
+
+  return true;
 };

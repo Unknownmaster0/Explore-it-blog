@@ -1,9 +1,55 @@
-import React from "react";
+import React, { useState } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+
+import { register } from "../../utils/auth";
 
 function Register() {
+  const [bioData, setBioData] = useState({
+    full_name: "",
+    email: "",
+    password: "",
+    password2: "",
+  });
+  const [isLoading, setIsLoading] = useState(false);
+  const navigate = useNavigate();
+
+  const handleBioDataChange = (event) => {
+    setBioData({
+      ...bioData,
+      [event.target.name]: event.target.value,
+    });
+  };
+
+  const resetForm = () => {
+    setBioData({
+      full_name: "",
+      email: "",
+      password: "",
+      password2: "",
+    });
+  };
+
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const { error } = await register(
+      bioData.full_name,
+      bioData.email,
+      bioData.password,
+      bioData.password2
+    );
+    if (error) {
+      alert(JSON.stringify(error));
+      resetForm();
+    } else {
+      navigate("/profile/");
+    }
+    setIsLoading(false);
+  };
+
   return (
     <>
       <Header />
@@ -25,7 +71,7 @@ function Register() {
                   </span>
                 </div>
                 {/* Form */}
-                <form className="needs-validation" noValidate="">
+                <form className="needs-validation" onSubmit={handleRegister}>
                   {/* Username */}
                   <div className="mb-3">
                     <label htmlFor="email" className="form-label">
@@ -33,6 +79,8 @@ function Register() {
                     </label>
                     <input
                       type="text"
+                      onChange={handleBioDataChange}
+                      value={bioData.full_name}
                       id="full_name"
                       className="form-control"
                       name="full_name"
@@ -46,6 +94,8 @@ function Register() {
                     </label>
                     <input
                       type="email"
+                      onChange={handleBioDataChange}
+                      value={bioData.email}
                       id="email"
                       className="form-control"
                       name="email"
@@ -61,6 +111,8 @@ function Register() {
                     </label>
                     <input
                       type="password"
+                      onChange={handleBioDataChange}
+                      value={bioData.password}
                       id="password"
                       className="form-control"
                       name="password"
@@ -74,17 +126,33 @@ function Register() {
                     </label>
                     <input
                       type="password"
+                      onChange={handleBioDataChange}
+                      value={bioData.password2}
                       id="password"
                       className="form-control"
-                      name="password"
+                      name="password2"
                       placeholder="**************"
                       required=""
                     />
                   </div>
                   <div>
                     <div className="d-grid">
-                      <button type="submit" className="btn btn-primary">
-                        Sign Up <i className="fas fa-user-plus"></i>
+                      <button
+                        className="btn btn-primary w-100"
+                        type="submit"
+                        disabled={isLoading}
+                      >
+                        {isLoading ? (
+                          <>
+                            <span className="mr-2 ">Processing...</span>
+                            <i className="fas fa-spinner fa-spin" />
+                          </>
+                        ) : (
+                          <>
+                            <span className="mr-2">Sign Up</span>
+                            <i className="fas fa-user-plus" />
+                          </>
+                        )}
                       </button>
                     </div>
                   </div>

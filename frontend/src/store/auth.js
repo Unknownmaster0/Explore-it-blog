@@ -1,15 +1,9 @@
-// Import the 'create' function from the 'zustand' library.
 import { create } from 'zustand';
-
-// Import the 'mountStoreDevtool' function from the 'simple-zustand-devtools' library.
 import { mountStoreDevtool } from 'simple-zustand-devtools';
 
 // Create a custom Zustand store named 'useAuthStore' using the 'create' function.
 const useAuthStore = create((set, get) => ({
-    // Define the 'allUserData' state variable and initialize it to null.
     allUserData: null, // Use this to store all user data
-
-    // Define the 'loading' state variable and initialize it to false.
     loading: false,
 
     // Define a function 'user' that returns an object with user-related data.
@@ -32,6 +26,4 @@ const useAuthStore = create((set, get) => ({
 if (import.meta.env.DEV) {
     mountStoreDevtool('Store', useAuthStore);
 }
-
-// Export the 'useAuthStore' for use in other parts of the application.
 export { useAuthStore };
