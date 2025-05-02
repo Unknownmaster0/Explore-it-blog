@@ -3,6 +3,7 @@ from django.http import JsonResponse
 from django.core.mail import EmailMultiAlternatives
 from django.template.loader import render_to_string
 from django.conf import settings
+from rest_framework.exceptions import NotFound
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.http import urlsafe_base64_encode
 from django.utils.encoding import force_bytes
@@ -337,3 +338,20 @@ class DashboardPostUpdateApiView(generics.RetrieveUpdateDestroyAPIView):
         post_instance.save()
 
         return Response({'message': 'Post updated successfully'}, status=status.HTTP_200_OK)
+
+class DashboardPostDetailAPIView(generics.RetrieveAPIView):
+    serializer_class = api_serializer.PostSerializer
+    permission_classes = [AllowAny]
+
+    def get_object(self):
+        user_id = self.kwargs['user_id']
+        post_id = self.kwargs['post_id']
+        
+        try:
+            user = api_models.User.objects.get(id=user_id)
+            return api_models.Post.objects.get(user=user, id=post_id)
+        except api_models.Post.DoesNotExist:
+            raise NotFound("Post not found")
+        except api_models.User.DoesNotExist:
+            raise NotFound("User not found")
+

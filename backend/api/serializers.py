@@ -10,33 +10,26 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     # Define a custom method to get the token for a user
     def get_token(cls, user):
+        print(user)
         # Call the parent class's get_token method
         token = super().get_token(user)
 
         # Add custom claims to the token
         token['full_name'] = user.full_name
         token['email'] = user.email
-        try:
-            token['vendor_id'] = user.vendor.id
-        except:
-            token['vendor_id'] = 0
 
         # Return the token with custom claims
         return token
 
 class RegisterSerializer(serializers.ModelSerializer):
-    # Define fields for the serializer, including password and password2
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
-        # Specify the model that this serializer is associated with
         model = api_models.User
-        # Define the fields from the model that should be included in the serializer
         fields = ('full_name', 'email',  'password', 'password2')
 
     def validate(self, attrs):
-        # Define a validation method to check if the passwords match
         if attrs['password'] != attrs['password2']:
             # Raise a validation error if the passwords don't match
             raise serializers.ValidationError({"password": "Password fields didn't match."})
@@ -50,22 +43,19 @@ class RegisterSerializer(serializers.ModelSerializer):
             full_name=validated_data['full_name'],
             email=validated_data['email'],
         )
-
         email_username, mobile = user.email.split('@')
         user.username = email_username
-        # Set the user's password based on the validated data
+
         user.set_password(validated_data['password'])
         user.save()
 
         # Return the created user
         return user
 
-
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = api_models.User
         fields = '__all__'
-
 
 class ProfileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -77,25 +67,29 @@ class ProfileSerializer(serializers.ModelSerializer):
         response['user'] = UserSerializer(instance.user).data
         return response
 
-class CategorySerializer(serializers.ModelSerializer): 
+class CategorySerializer(serializers.ModelSerializer):
     post_count = serializers.SerializerMethodField()
 
-    def get_post_cnt(self, category): 
+    def get_post_count(self, category):
         return category.posts.count()
     
     class Meta:
         model = api_models.Category
-        fields = ['id', 'title', 'image', 'slug', 'post_count']
+        fields = [
+            "id",
+            "title",
+            "image",
+            "slug",
+            "post_count",
+        ]
 
     def __init__(self, *args, **kwargs):
-        # Call the parent class's __init__ method
         super(CategorySerializer, self).__init__(*args, **kwargs)
         request = self.context.get('request')
-        if request and request.method == 'POST': 
+        if request and request.method == 'POST':
             self.Meta.depth = 0
-        else: 
+        else:
             self.Meta.depth = 3
-
 
 class CommentSerializer(serializers.ModelSerializer):
     class Meta:
@@ -125,21 +119,43 @@ class PostSerializer(serializers.ModelSerializer):
         else:
             self.Meta.depth = 3
 
-class BookmarksSerializer(serializers.ModelSerializer): 
-    class Meta: 
+class PostUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = api_models.Post
+        fields = ['title', 'description', 'category', 'tags', 'status', 'image']
+        extra_kwargs = {
+            'title': {'required': False},
+            'description': {'required': False},
+            'category': {'required': False},
+            'tags': {'required': False},
+            'status': {'required': False},
+            'image': {'required': False},
+        }
+
+    def update(self, instance, validated_data):
+        for field, value in validated_data.items():
+            # Only update fields that were actually provided
+            if value is not None:
+                setattr(instance, field, value)
+        instance.save()
+        return instance
+
+class BookmarkSerializer(serializers.ModelSerializer):
+    class Meta:
         model = api_models.Bookmark
         fields = "__all__"
 
+
     def __init__(self, *args, **kwargs):
-        super(BookmarksSerializer, self).__init__(*args, **kwargs)
+        super(BookmarkSerializer, self).__init__(*args, **kwargs)
         request = self.context.get('request')
         if request and request.method == 'POST':
             self.Meta.depth = 0
         else:
             self.Meta.depth = 3
-
-class NotificationSerializer(serializers.ModelSerializer): 
-    class Meta: 
+    
+class NotificationSerializer(serializers.ModelSerializer):  
+    class Meta:
         model = api_models.Notification
         fields = "__all__"
 
@@ -151,7 +167,7 @@ class NotificationSerializer(serializers.ModelSerializer):
         else:
             self.Meta.depth = 3
 
-class AuthorStats(serializers.Serializer): 
+class AuthorStats(serializers.Serializer):
     views = serializers.IntegerField(default=0)
     posts = serializers.IntegerField(default=0)
     likes = serializers.IntegerField(default=0)

@@ -12,7 +12,6 @@ class User(AbstractUser):
     username = models.CharField(unique=True, max_length=100)
     email = models.EmailField(unique=True) 
     full_name = models.CharField(max_length=100, null=True, blank=True)
-    otp = models.CharField(max_length=100, null=True, blank=True)
     
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
@@ -32,7 +31,6 @@ class User(AbstractUser):
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.FileField(upload_to="image", default="default/default-user.jpg", null=True, blank=True)
-    full_name = models.CharField(max_length=100, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     about = models.TextField(null=True, blank=True)
     author = models.BooleanField(default=False)
@@ -42,10 +40,7 @@ class Profile(models.Model):
     date = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        if self.full_name:
-            return str(self.full_name)
-        else:
-            return str(self.user.full_name)
+        return str(self.user.full_name)
     
 # after the user is created, create their corresponding profile.
 def create_user_profile(sender, instance, created, **kwargs):
