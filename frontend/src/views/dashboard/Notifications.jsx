@@ -1,11 +1,51 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
 import { Link } from "react-router-dom";
 
+import apiInstance from "../../utils/axios";
+import useUserData from "../../plugin/useUserData";
+import moment from "../../plugin/Moment";
+import Toast from "../../plugin/Toast";
+import PrivateRoute from "../../layouts/PrivateRoute";
+
 function Notifications() {
+  const [noti, setNoti] = useState([]);
+  const userId = useUserData()?.user_id;
+
+  const fetchNoti = async () => {
+    try {
+      const response = await apiInstance.get(
+        `author/dashboard/notifications/${userId}/`
+      );
+      setNoti(response.data);
+    } catch (error) {
+      console.log(error);
+      Toast("error", "Something went wrong");
+    }
+  };
+
+  useEffect(() => {
+    fetchNoti();
+  }, []);
+
+  const handleMarkNotiAsSeen = async (notiId) => {
+    try {
+      const response = await apiInstance.post(
+        "author/dashboard/mark-notification/",
+        { noti_id: notiId }
+      );
+      console.log(response.data);
+      Toast("success", "Notification Seen", "");
+      fetchNoti();
+    } catch (error) {
+      console.log(error);
+      Toast("failure", "Something went wrong");
+    }
+  };
+
   return (
-    <>
+    <PrivateRoute>
       <Header />
       <section className="pt-5 pb-5">
         <div className="container">
@@ -20,79 +60,74 @@ function Notifications() {
                 </div>
                 <div className="card-body">
                   <ul className="list-group list-group-flush">
-                    <li className="list-group-item p-4 shadow rounded-3 mt-4">
-                      <div className="d-flex">
-                        <div className="ms-3 mt-2">
-                          <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                              <h4 className="mb-0 fw-bold">
-                                <i className="bi bi-chat-left-quote-fill text-success "></i>{" "}
-                                New Comment
-                              </h4>
-                              <p className="mt-3">
-                                Monica FineGeh commented on your post{" "}
-                                <b>
-                                  How to become a better django and react.js
-                                  developer
-                                </b>
-                              </p>
+                    {noti?.map((n, index) => (
+                      <div key={index}>
+                        <li className="list-group-item p-4 shadow rounded-3 mt-4">
+                          <div className="col-12">
+                            <div className="d-flex justify-content-between position-relative">
+                              <div className="d-sm-flex">
+                                <div className="icon-lg bg-opacity-15 rounded-2 flex-shrink-0">
+                                  {n.type === "Like" && (
+                                    <i className="fas fa-thumbs-up text-primary fs-5" />
+                                  )}
+                                </div>
+                                <div className="icon-lg bg-opacity-15 rounded-2 flex-shrink-0">
+                                  {n.type === "Comment" && (
+                                    <i className="bi bi-chat-left-quote-fill  text-success fs-5" />
+                                  )}
+                                </div>
+                                <div className="icon-lg bg-opacity-15 rounded-2 flex-shrink-0">
+                                  {n.type === "Bookmark" && (
+                                    <i className="fas fa-bookmark text-danger fs-5" />
+                                  )}
+                                </div>
+                                <div className="ms-0 ms-sm-3 mt-2 mt-sm-0">
+                                  <h6 className="mb-0">{n.type}</h6>
+                                  <div className="mb-0">
+                                    {n.type === "Like" && (
+                                      <p>
+                                        Someone liked your post{" "}
+                                        <b>
+                                          {n.post?.title?.slice(0, 30) + "..."}
+                                        </b>
+                                      </p>
+                                    )}
+                                    {n.type === "Comment" && (
+                                      <p>
+                                        You have a new comment on{" "}
+                                        <b>
+                                          {n.post?.title?.slice(0, 30) + "..."}
+                                        </b>
+                                      </p>
+                                    )}
+                                    {n.type === "Bookmark" && (
+                                      <p>
+                                        Someone bookmarked your post{" "}
+                                        <b>
+                                          {n.post?.title?.slice(0, 30) + "..."}
+                                        </b>
+                                      </p>
+                                    )}
+                                  </div>
+                                  <span className="small">
+                                    {moment(noti.date)}
+                                  </span>
+                                  <br />
+                                  <button
+                                    onClick={() => handleMarkNotiAsSeen(n.id)}
+                                    className="btn btn-secondary mt-2"
+                                  >
+                                    <i className="fas fa-check-circle"></i>
+                                  </button>
+                                </div>
+                              </div>
                             </div>
                           </div>
-                          <div className="mt-2">
-                            <p className="mt-1">
-                              <span className="me-2 fw-bold">
-                                Date: <span className="fw-light">30/11/24</span>
-                              </span>
-                            </p>
-                            <p>
-                              <button
-                                class="btn btn-outline-secondary"
-                                type="button"
-                              >
-                                Mark as Seen <i className="fas fa-check"></i>
-                              </button>
-                            </p>
-                          </div>
-                        </div>
+                        </li>
                       </div>
-                    </li>
+                    ))}
 
-                    <li className="list-group-item p-4 shadow rounded-3 mt-4">
-                      <div className="d-flex">
-                        <div className="ms-3 mt-2">
-                          <div className="d-flex align-items-center justify-content-between">
-                            <div>
-                              <h4 className="mb-0 fw-bold">
-                                <i className="fas fa-thumbs-up text-primary "></i>{" "}
-                                New Like
-                              </h4>
-                              <p className="mt-3">
-                                Destiny Franks liked your post{" "}
-                                <b>
-                                  How to become a better django and react.js
-                                  developer
-                                </b>
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-2">
-                            <p className="mt-1">
-                              <span className="me-2 fw-bold">
-                                Date: <span className="fw-light">30/11/24</span>
-                              </span>
-                            </p>
-                            <p>
-                              <button
-                                class="btn btn-outline-secondary"
-                                type="button"
-                              >
-                                Mark as Seen <i className="fas fa-check"></i>
-                              </button>
-                            </p>
-                          </div>
-                        </div>
-                      </div>
-                    </li>
+                    {noti?.length < 1 && <p>No notifications yet</p>}
                   </ul>
                 </div>
               </div>
@@ -101,7 +136,7 @@ function Notifications() {
         </div>
       </section>
       <Footer />
-    </>
+    </PrivateRoute>
   );
 }
 

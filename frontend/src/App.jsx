@@ -12,6 +12,7 @@ import Comments from "./views/dashboard/Comments";
 import Notifications from "./views/dashboard/Notifications";
 import Profile from "./views/dashboard/Profile";
 import MainWrapper from "../src/layouts/MainWrapper";
+import NotFound from "./layouts/NotFound";
 
 function App() {
   return (
@@ -20,7 +21,7 @@ function App() {
         <MainWrapper>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/:slug/" element={<Detail />} />
+            <Route path="/detail/:slug/" element={<Detail />} />
 
             {/* Authentication */}
             <Route path="/register/" element={<Register />} />
@@ -35,6 +36,9 @@ function App() {
             <Route path="/comments/" element={<Comments />} />
             <Route path="/notifications/" element={<Notifications />} />
             <Route path="/profile/" element={<Profile />} />
+
+            {/* any other route that is not valid */}
+            <Route path="/:slug" element={<NotFound />} />
           </Routes>
         </MainWrapper>
       </BrowserRouter>
