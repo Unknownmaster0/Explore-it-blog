@@ -11,7 +11,7 @@ function Index() {
   const [posts, setPosts] = useState([]);
 
   const fetchPosts = async () => {
-    const response = await apiInstance.get(`post/list/`);
+    const response = await apiInstance.get(`/post/list/`);
     setPosts(response.data);
   };
 
