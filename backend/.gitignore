@@ -1,7 +1,5 @@
 # Python/Django specific
-__pycache__/
 *.py[cod]
-*.sqlite3
 *.log
 .env
 .env.local
