@@ -1,13 +1,13 @@
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-from django.db.models.signals import post_save
-from django.utils.html import mark_safe
+from django.db.models.signals import post_save, post_delete
 from django.utils.text import slugify
+from cloudinary.models import CloudinaryField
+import cloudinary
 
 from shortuuid.django_fields import ShortUUIDField
 import shortuuid
 
-# overiding the default user model
 class User(AbstractUser):
     username = models.CharField(unique=True, max_length=100)
     email = models.EmailField(unique=True) 
@@ -28,9 +28,15 @@ class User(AbstractUser):
     
         super(User, self).save(*args, **kwargs)
 
+
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = models.FileField(upload_to="image", default="default/default-user.jpg", null=True, blank=True)
+    image = CloudinaryField('image', folder='blog_posts/', null=True, blank=True, 
+                            transformation={
+                                'quality': 'auto',
+                                'fetch_format': 'auto',
+                            })
+    image_url = models.URLField(max_length=500, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     about = models.TextField(null=True, blank=True)
     author = models.BooleanField(default=False)
@@ -42,7 +48,7 @@ class Profile(models.Model):
     def __str__(self):
         return str(self.user.full_name)
     
-# after the user is created, create their corresponding profile.
+
 def create_user_profile(sender, instance, created, **kwargs):
     if created:
         Profile.objects.create(user=instance)
@@ -52,6 +58,11 @@ def save_user_profile(sender, instance, **kwargs):
 
 post_save.connect(create_user_profile, sender=User)
 post_save.connect(save_user_profile, sender=User)
+
+def delete_profile_image(sender, instance, **kwargs):
+    if instance.image:
+        cloudinary.uploader.destroy(instance.image.public_id)
+post_save.connect(delete_profile_image, sender=Profile)
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
@@ -72,6 +83,7 @@ class Category(models.Model):
     def post_count(self):
         return Post.objects.filter(category=self).count()
 
+
 class Post(models.Model):
     STATUS = ( 
         ("Active", "Active"), 
@@ -82,7 +94,13 @@ class Post(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     profile = models.ForeignKey(Profile, on_delete=models.CASCADE, null=True, blank=True)
     title = models.CharField(max_length=100)
-    image = models.FileField(upload_to="image", null=True, blank=True)
+    #use the clodinary image field.
+    image = CloudinaryField('image', folder='blog_posts/', null=True, blank=True, 
+                            transformation={
+                                'quality': 'auto',
+                                'fetch_format': 'auto',
+                            })
+    image_url = models.URLField(max_length=500, null=True, blank=True)
     description = models.TextField(null=True, blank=True)
     tags = models.CharField(max_length=100, null=True, blank=True)
     category = models.ForeignKey(Category, on_delete=models.SET_NULL, null=True, related_name='posts')
@@ -102,11 +120,20 @@ class Post(models.Model):
         if self.slug == "" or self.slug == None:
             # for making the slug to unique for different user.
             self.slug = slugify(self.title) + "-" + shortuuid.uuid()[:2]
+        # Set profile if not set but user exists
+        if not self.profile and self.user:
+            self.profile = self.user.profile
         super(Post, self).save(*args, **kwargs)
     
     def comments(self):
         return Comment.objects.filter(post=self).order_by("-id")
 
+def delete_post_image(sender, instance, **kwargs):
+    if instance.image:
+        cloudinary.uploader.destroy(instance.image.public_id)
+
+post_delete.connect(delete_post_image, sender=Post)
+    
     
 class Comment(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE)
