@@ -36,8 +36,6 @@ urlpatterns = [
 
     path('author/dashboard/mark-notification/', api_views.DashboardMarkNotiSeenAPIView.as_view(), name='mark_notification_seen'),
     
-    path('author/dashboard/reply-comment/', api_views.DashboardReplyCommentAPIView.as_view(), name='reply_comment'),
-
     path('author/dashboard/post-create/', api_views.DashboardPostCreateAPIView.as_view(), name='post_create'),
 
     path('author/dashboard/update-post/<user_id>/<post_id>/', api_views.DashboardPostUpdateAPIView.as_view(), name='post_update'),
