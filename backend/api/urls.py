@@ -8,13 +8,14 @@ urlpatterns = [
     path('user/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
     path('user/register/', api_views.RegisterView.as_view(), name='register'),
     path('user/profile/<user_id>/', api_views.ProfileView.as_view(), name='user_profile'),
+    path('user/update-profile/<user_id>/', api_views.ProfileUpdateView.as_view(), name='update_profile'),
 
     #post urls
     path('post/category/list/', api_views.CategoryListAPIView.as_view(), name='category_list'),
     
     path('post/category/posts/<category_slug>/', api_views.PostCategoryListAPIView.as_view(), name='post_category_list'),
     
-    path('post/list/', api_views.PostListAPIView.as_view(), name='post_list'),
+    path('posts/public/', api_views.PublicPostList.as_view(), name='public-posts'),
     
     path('post/detail/<slug>/', api_views.PostDetailAPIView.
     as_view(), name='post_detail'),
