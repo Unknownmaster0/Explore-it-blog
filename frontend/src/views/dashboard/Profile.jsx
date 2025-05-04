@@ -21,13 +21,25 @@ function Profile() {
   });
   const userId = useUserData()?.user_id;
 
+  const [imagePreview, setImagePreview] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (userId == undefined) {
+      Toast("error", "You are not logged in!");
+      navigate("/logout/");
+    }
+  }, [userId]);
 
   const fetchProfile = () => {
     (async () => {
       try {
         const res = await apiInstance.get(`user/profile/${userId}/`);
         setProfileData(res.data);
+        // Set image preview if profile has image_url
+        if (res.data.image_url) {
+          setImagePreview(res.data.image_url);
+        }
       } catch (error) {
         Toast("error", "Error fetching profile data");
         console.log(error);
@@ -53,6 +65,11 @@ function Profile() {
     try {
       const formData = new FormData();
 
+      // Only append fields that should be updated
+      if (profileData.image?.file) {
+        formData.append("image", profileData.image.file);
+      }
+
       // Only append text fields that are not related to the user object
       if (profileData.about) formData.append("about", profileData.about);
       if (profileData.bio) formData.append("bio", profileData.bio);
@@ -66,6 +83,7 @@ function Profile() {
         // for (let pair of formData.entries()) {
         //   console.log(pair[0] + ": " + pair[1]);
         // }
+        // console.log(formData.get("image"));
         const response = await apiInstance.patch(
           `user/update-profile/${userId}/`,
           formData,
@@ -78,6 +96,9 @@ function Profile() {
 
         if (response.status === 200) {
           Toast("success", "Profile updated successfully");
+          if (response.data.data?.image_url) {
+            setImagePreview(response.data.data.image_url);
+          }
           fetchProfile();
           navigate("/");
         }
@@ -90,6 +111,38 @@ function Profile() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleFileChange = (event) => {
+    const selectedFile = event.target.files[0];
+    const reader = new FileReader();
+
+    // Validate file type
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp"];
+    if (!allowedTypes.includes(selectedFile.type)) {
+      Toast("error", "Please select a valid image file (JPEG, PNG, or WEBP)");
+      return;
+    }
+
+    // Validate file size (max 5MB)
+    if (selectedFile.size > 5 * 1024 * 1024) {
+      Toast("error", "Image size should be less than 5MB");
+      return;
+    }
+
+    setProfileData({
+      ...profileData,
+      image: {
+        file: selectedFile,
+        preview: reader.result,
+      },
+    });
+
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+
+    if (selectedFile) reader.readAsDataURL(selectedFile);
   };
 
   console.log(profileData);

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
+import { useNavigate } from "react-router-dom";
 
 import apiInstance from "../../utils/axios";
 import useUserData from "../../plugin/useUserData";
@@ -13,6 +14,15 @@ function Comments() {
   const [reply, setReply] = useState("");
   const userId = useUserData()?.user_id;
 
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userId == undefined) {
+      Toast("error", "You are not logged in!");
+      navigate("/logout/");
+    }
+  }, [userId]);
+
   const fetchComment = async () => {
     const response = await apiInstance.get(
       `author/dashboard/comments/${userId}/`
@@ -24,6 +34,24 @@ function Comments() {
     fetchComment();
   }, []);
 
+  const handleSubmitReply = async (commentId) => {
+    try {
+      const response = await apiInstance.post(
+        `author/dashboard/reply-comment/`,
+        {
+          comment_id: commentId,
+          reply: reply,
+        }
+      );
+      console.log(response.data);
+      fetchComment();
+      Toast("success", "Reply Sent.", "");
+      setReply("");
+    } catch (error) {
+      console.log(error);
+      Toast("error", "Something Wrong");
+    }
+  };
 
   return (
     <PrivateRoute>

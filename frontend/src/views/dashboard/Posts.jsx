@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
 import { Link } from "react-router-dom";
-
+import { useNavigate } from "react-router-dom";
 import apiInstance from "../../utils/axios";
 import useUserData from "../../plugin/useUserData";
 import moment from "../../plugin/Moment";
@@ -12,6 +12,15 @@ import Toast from "../../plugin/Toast";
 function Posts() {
   const [posts, setPosts] = useState([]);
   const userId = useUserData()?.user_id;
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userId == undefined) {
+      Toast("error", "You are not logged in!");
+      navigate("/logout/");
+    }
+  }, [userId]);
 
   const fetchPosts = async () => {
     const post_res = await apiInstance.get(`author/dashboard/posts/${userId}/`);

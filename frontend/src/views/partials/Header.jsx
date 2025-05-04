@@ -1,22 +1,15 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { Link } from "react-router-dom";
-import useUserData from "../../plugin/useUserData";
 import { useAuthStore } from "../../store/auth";
 
 function Header() {
   const [isExpanded, setIsExpanded] = useState(false);
-  const userId = useUserData()?.user_id;
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)();
-  const [_, setRefresh] = useState(false);
 
   // Toggle the navbar on mobile
   const toggleNavbar = () => {
     setIsExpanded(!isExpanded);
   };
-
-  useEffect(() => {
-    setRefresh(true);
-  }, [userId]);
 
   return (
     <header className="navbar-dark bg-dark">

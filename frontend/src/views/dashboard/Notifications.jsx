@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
-
+import { useNavigate } from "react-router-dom";
 import apiInstance from "../../utils/axios";
 import useUserData from "../../plugin/useUserData";
 import moment from "../../plugin/Moment";
@@ -11,6 +11,15 @@ import PrivateRoute from "../../layouts/PrivateRoute";
 function Notifications() {
   const [noti, setNoti] = useState([]);
   const userId = useUserData()?.user_id;
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userId == undefined) {
+      Toast("error", "You are not logged in!");
+      navigate("/logout/");
+    }
+  }, [userId]);
 
   const fetchNoti = async () => {
     try {

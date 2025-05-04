@@ -13,7 +13,7 @@ function Index() {
   const userId = useUserData()?.user_id;
 
   const fetchPosts = async () => {
-    const res = await apiInstance.get(`posts/public/`);
+    const res = await apiInstance.get(`posts/public/`); 
     setPosts(res.data);
   };
 

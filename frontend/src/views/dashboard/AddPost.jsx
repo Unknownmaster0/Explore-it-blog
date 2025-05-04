@@ -38,9 +38,9 @@ function AddPost() {
   useEffect(() => {
     if (userId == undefined) {
       Toast("error", "You are not logged in!");
-      navigate("/login/");
+      navigate("/logout/");
     }
-  }, []);
+  }, [userId]);
 
   const handleCreatePostChange = (event) => {
     setCreatePost({

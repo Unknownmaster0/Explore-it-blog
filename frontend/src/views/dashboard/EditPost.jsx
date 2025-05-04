@@ -70,6 +70,10 @@ function EditPost() {
   };
 
   useEffect(() => {
+    if (userId == undefined) {
+      Toast("error", "You are not logged in!");
+      navigate("/logout/");
+    }
     if (userId && params.postId) {
       fetchPost();
       fetchCategories();

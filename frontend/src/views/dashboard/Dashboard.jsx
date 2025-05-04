@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
 import { Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 
 import apiInstance from "../../utils/axios";
 import useUserData from "../../plugin/useUserData";
@@ -17,6 +18,15 @@ function Dashboard() {
 
   const userId = useUserData()?.user_id;
   // console.log(`userid: ${userId}`);
+
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    if (userId == undefined) {
+      Toast("error", "You are not logged in!");
+      navigate("/logout/");
+    }
+  }, [userId]);
 
   const fetchDashboardData = async () => {
     const stats_res = await apiInstance.get(
