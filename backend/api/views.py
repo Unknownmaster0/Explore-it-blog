@@ -1,34 +1,22 @@
-from django.shortcuts import render
-from django.http import JsonResponse
-from django.core.mail import EmailMultiAlternatives
-from django.template.loader import render_to_string
-from django.conf import settings
-from django.contrib.auth.tokens import default_token_generator
-from django.utils.http import urlsafe_base64_encode
-from django.utils.encoding import force_bytes
 from django.db.models import Sum
 from rest_framework import status
-from rest_framework.decorators import api_view, APIView
+from rest_framework.decorators import APIView
 from rest_framework.response import Response
 from rest_framework_simplejwt.views import TokenObtainPairView
 from rest_framework import generics
-from rest_framework.permissions import AllowAny, IsAuthenticated
+from rest_framework.permissions import AllowAny
 from rest_framework.exceptions import NotFound
-from rest_framework.decorators import api_view, permission_classes
-from rest_framework_simplejwt.tokens import RefreshToken
 
 from drf_yasg import openapi
 from drf_yasg.utils import swagger_auto_schema
-from datetime import datetime
 
 # Others
-import json
-import random
+import cloudinary
+import cloudinary.uploader
 
 # Custom Imports
 from api import serializers as api_serializer
 from api import models as api_models
-
 
 class MyTokenObtainPairView(TokenObtainPairView):
     # Here, it specifies the serializer class to be used with this view.
@@ -42,129 +30,39 @@ class RegisterView(generics.CreateAPIView):
     # It sets the serializer class to be used with this view.
     serializer_class = api_serializer.RegisterSerializer
 
-class UserDetailByEmailView(APIView):
-    permission_classes = [AllowAny]  # You might want to change this to IsAuthenticated
-    @swagger_auto_schema(
-        operation_description="Get user details by email",
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            required=['email'],
-            properties={
-                'email': openapi.Schema(
-                    type=openapi.TYPE_STRING,
-                    description='User email address'
-                )
-            }
-        ),
-        responses={
-            200: api_serializer.UserSerializer,
-            400: 'Bad Request',
-            404: 'User not found'
-        }
-    )
-    def post(self, request):
-        try:
-            email = request.data.get('email')
-            if not email:
-                return Response(
-                    {"error": "Email is required"}, 
-                    status=status.HTTP_400_BAD_REQUEST
-                )
 
-            user = api_models.User.objects.filter(email=email).first()
-            if not user:
-                return Response(
-                    {"error": "User not found"}, 
-                    status=status.HTTP_404_NOT_FOUND
-                )
-
-            serializer = api_serializer.UserSerializer(user)
-            return Response(serializer.data, status=status.HTTP_200_OK)
-            
-        except Exception as e:
-            return Response(
-                {"error": str(e)}, 
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR
-            )
-
-class ProfileView(generics.RetrieveUpdateAPIView):
-    permission_classes = (AllowAny,)
+class ProfileView(generics.RetrieveAPIView):
     serializer_class = api_serializer.ProfileSerializer
+    permission_classes = (AllowAny,)
 
-    def get_object(self):
+    def get_queryset(self):
         user_id = self.kwargs['user_id']
-
         user = api_models.User.objects.get(id=user_id)
-        profile = api_models.Profile.objects.get(user=user)
-        return profile
-    
+        # Check if the user exists
+        return api_models.Profile.objects.get(user=user)
 
-def generate_numeric_otp(length=7):
-        # Generate a random 7-digit OTP
-        otp = ''.join([str(random.randint(0, 9)) for _ in range(length)])
-        return otp
-
-class PasswordEmailVerify(generics.RetrieveAPIView):
-    permission_classes = (AllowAny,)
-    serializer_class = api_serializer.UserSerializer
-    
     def get_object(self):
-        email = self.kwargs['email']
-        user = api_models.User.objects.get(email=email)
+        try:
+            user_id = self.kwargs['user_id']
+            user = api_models.User.objects.get(id=user_id)
+            profile = api_models.Profile.objects.get(user=user)
+            return profile
+        except (api_models.User.DoesNotExist, api_models.Profile.DoesNotExist):
+            raise NotFound("Profile not found")
         
-        if user:
-            user.otp = generate_numeric_otp()
-            uidb64 = user.pk
-            
-             # Generate a token and include it in the reset link sent via email
-            refresh = RefreshToken.for_user(user)
-            reset_token = str(refresh.access_token)
-
-            # Store the reset_token in the user model for later verification
-            user.reset_token = reset_token
-            user.save()
-
-            link = f"http://localhost:5173/create-new-password?otp={user.otp}&uidb64={uidb64}&reset_token={reset_token}"
-            
-            merge_data = {
-                'link': link, 
-                'username': user.username, 
-            }
-            subject = f"Password Reset Request"
-            text_body = render_to_string("email/password_reset.txt", merge_data)
-            html_body = render_to_string("email/password_reset.html", merge_data)
-            
-            msg = EmailMultiAlternatives(
-                subject=subject, from_email=settings.FROM_EMAIL,
-                to=[user.email], body=text_body
-            )
-            msg.attach_alternative(html_body, "text/html")
-            msg.send()
-        return user
-    
-
-class PasswordChangeView(generics.CreateAPIView):
+class ProfileUpdateView(generics.RetrieveUpdateAPIView):
+    serializer_class = api_serializer.ProfileUpdateSerializer
     permission_classes = (AllowAny,)
-    serializer_class = api_serializer.UserSerializer
-    
-    def create(self, request, *args, **kwargs):
-        payload = request.data
-        
-        otp = payload['otp']
-        uidb64 = payload['uidb64']
-        password = payload['password']
 
+    def get_object(self):
+        try:
+            user_id = self.kwargs['user_id']
+            user = api_models.User.objects.get(id=user_id)
+            profile = api_models.Profile.objects.get(user=user)
+            return profile
+        except (api_models.User.DoesNotExist, api_models.Profile.DoesNotExist):
+            raise NotFound("Profile not found")
         
-
-        user = api_models.User.objects.get(id=uidb64, otp=otp)
-        if user:
-            user.set_password(password)
-            user.otp = ""
-            user.save()
-            
-            return Response( {"message": "Password Changed Successfully"}, status=status.HTTP_201_CREATED)
-        else:
-            return Response( {"message": "An Error Occured"}, status=status.HTTP_500_INTERNAL_SERVER_ERROR)
 
 ######################## Post APIs ########################
 
@@ -189,7 +87,15 @@ class PostListAPIView(generics.ListAPIView):
     permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return api_models.Post.objects.all()
+        return api_models.Post.objects.filter(status='Active').order_by('-date')
+    
+class PublicPostList(generics.ListAPIView):
+    serializer_class = api_serializer.PostSerializer
+    permission_classes = (AllowAny,)
+    queryset = api_models.Post.objects.all()
+
+    def get_queryset(self):
+        return api_models.Post.objects.all().order_by('-date')
     
 class PostDetailAPIView(generics.RetrieveAPIView):
     serializer_class = api_serializer.PostSerializer
@@ -389,66 +295,50 @@ class DashboardMarkNotiSeenAPIView(APIView):
 
         return Response({"message": "Notification Marked As Seen"}, status=status.HTTP_200_OK)
 
-class DashboardReplyCommentAPIView(APIView):
-    permission_classes = [AllowAny]
-    @swagger_auto_schema(
-        request_body=openapi.Schema(
-            type=openapi.TYPE_OBJECT,
-            properties={
-                'comment_id': openapi.Schema(type=openapi.TYPE_INTEGER),
-                'reply': openapi.Schema(type=openapi.TYPE_STRING),
-            },
-        ),
-    )
-    def post(self, request):
-        comment_id = request.data['comment_id']
-        reply = request.data['reply']
-
-        print("comment_id =======", comment_id)
-        print("reply ===========", reply)
-
-        comment = api_models.Comment.objects.get(id=comment_id)
-        comment.reply = reply
-        comment.save()
-
-        return Response({"message": "Comment Response Sent"}, status=status.HTTP_201_CREATED)
-    
 class DashboardPostCreateAPIView(generics.CreateAPIView):
     serializer_class = api_serializer.PostSerializer
     permission_classes = [AllowAny]
 
     def create(self, request, *args, **kwargs):
-        print(request.data)
-        user_id = request.data.get('user_id')
-        title = request.data.get('title')
-        image = request.data.get('image')
-        description = request.data.get('description')
-        tags = request.data.get('tags')
-        category_id = request.data.get('category')
-        post_status = request.data.get('post_status')
+        try:
+            print(request.data)
+            user_id = request.data.get('user_id')
+            title = request.data.get('title')
+            image = request.data.get('image')
+            description = request.data.get('description')
+            tags = request.data.get('tags')
+            category_id = request.data.get('category')
+            post_status = request.data.get('post_status')
 
-        print(user_id)
-        print(title)
-        print(image)
-        print(description)
-        print(tags)
-        print(category_id)
-        print(post_status)
+            print(user_id)
+            print(title)
+            print(image)
+            print(description)
+            print(tags)
+            print(category_id)
+            print(post_status)
 
-        user = api_models.User.objects.get(id=user_id)
-        category = api_models.Category.objects.get(id=category_id)
+            user = api_models.User.objects.get(id=user_id)
+            category = api_models.Category.objects.get(id=category_id)
 
-        post = api_models.Post.objects.create(
-            user=user,
-            title=title,
-            image=image,
-            description=description,
-            tags=tags,
-            category=category,
-            status=post_status
-        )
+            post = api_models.Post.objects.create(
+                user=user,
+                title=title,
+                image=image,
+                description=description,
+                tags=tags,
+                category=category,
+                status=post_status
+            )
 
-        return Response({"message": "Post Created Successfully"}, status=status.HTTP_201_CREATED)
+            if 'image' in request.FILES:
+                post.image = request.FILES['image']
+                post.save()
+
+            return Response({"message": "Post Created Successfully",
+                            "post": self.serializer_class(post).data}, status=status.HTTP_201_CREATED)
+        except Exception as e:
+            return Response({"message": f"Error creating post: {str(e)}"}, status=status.HTTP_400_BAD_REQUEST)
 
 class DashboardPostUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = api_serializer.PostSerializer
@@ -460,16 +350,21 @@ class DashboardPostUpdateAPIView(generics.RetrieveUpdateDestroyAPIView):
         user = api_models.User.objects.get(id=user_id)
         return api_models.Post.objects.get(user=user, id=post_id)
 
-    def update(self, request, *args, **kwargs):
+    def post(self, request, *args, **kwargs):
         try:
             post_instance = self.get_object()
-
+            print('i come in the update section')
+            print(request.data)
             # Only update fields that are provided in the request
             if 'title' in request.data:
-                post_instance.title = request.data['title']
+                post_instance.title = request.data.get('title')
             
-            if 'image' in request.data and request.data['image'] != "undefined":
-                post_instance.image = request.data['image']
+            if 'image' in request.FILES:
+                # Delete old image from Cloudinary if exists
+                if post_instance.image and post_instance.image.public_id:
+                    cloudinary.uploader.destroy(post_instance.image.public_id)
+                # Upload new image
+                post_instance.image = request.FILES['image']
             
             if 'description' in request.data:
                 post_instance.description = request.data['description']
