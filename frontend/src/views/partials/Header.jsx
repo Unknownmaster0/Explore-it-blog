@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import useUserData from "../../plugin/useUserData";
 import { useAuthStore } from "../../store/auth";
@@ -7,11 +7,16 @@ function Header() {
   const [isExpanded, setIsExpanded] = useState(false);
   const userId = useUserData()?.user_id;
   const isLoggedIn = useAuthStore((state) => state.isLoggedIn)();
+  const [_, setRefresh] = useState(false);
 
   // Toggle the navbar on mobile
   const toggleNavbar = () => {
     setIsExpanded(!isExpanded);
   };
+
+  useEffect(() => {
+    setRefresh(true);
+  }, [userId]);
 
   return (
     <header className="navbar-dark bg-dark">
@@ -42,6 +47,7 @@ function Header() {
             </span>
           </button>
 
+          {/* Navigation content - CRITICAL FIX - force display with inline styles */}
           <div
             className={`collapse navbar-collapse ${isExpanded ? "show" : ""}`}
             id="navbarCollapse"
@@ -51,6 +57,7 @@ function Header() {
               opacity: 1,
             }}
           >
+            {/* Navigation links - FORCE DISPLAY with inline style */}
             <ul
               className="navbar-nav navbar-nav-scroll ms-auto"
               style={{
@@ -79,7 +86,7 @@ function Header() {
               </li>
 
               {/* Dashboard dropdown */}
-              {userId ? (
+              {isLoggedIn && (
                 <li
                   className="nav-item dropdown"
                   style={{
@@ -137,7 +144,7 @@ function Header() {
                     </li>
                   </ul>
                 </li>
-              ) : null}
+              )}
 
               {/* Auth buttons */}
               <li

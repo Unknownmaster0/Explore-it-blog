@@ -37,7 +37,7 @@ function EditPost() {
       );
 
       const postData = response.data;
-      setOriginalPost(postData); // Store original data
+      setOriginalPost(postData); // original post data
 
       // Set current editing data
       setPost({
@@ -85,18 +85,21 @@ function EditPost() {
   };
 
   const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-        setPost((prev) => ({
-          ...prev,
-          image: { file, preview: reader.result },
-        }));
-      };
-      reader.readAsDataURL(file);
-    }
+    const sleectedFile = e.target.files[0];
+    const reader = new FileReader();
+
+    setPost({
+      ...post,
+      image: {
+        file: sleectedFile,
+        preview: reader.result,
+      },
+    });
+
+    reader.onloadend = () => {
+      setImagePreview(reader.result);
+    };
+    if (sleectedFile) reader.readAsDataURL(sleectedFile);
   };
 
   const handleSubmit = async (e) => {
@@ -128,7 +131,12 @@ function EditPost() {
 
       // Only make request if there are changes
       if ([...formData.entries()].length > 0) {
-        await apiInstance.patch(
+        // console.log("FormData contents:");
+        // for (let pair of formData.entries()) {
+        //   console.log(pair[0] + ": " + pair[1]);
+        // }
+        // console.log(formData.get("image"));
+        await apiInstance.post(
           `author/dashboard/update-post/${userId}/${params.postId}/`,
           formData,
           {

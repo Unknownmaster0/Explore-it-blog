@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
+import { useNavigate } from "react-router-dom";
 
 import apiInstance from "../../utils/axios";
 import useUserData from "../../plugin/useUserData";
@@ -8,6 +9,7 @@ import Toast from "../../plugin/Toast";
 import PrivateRoute from "../../layouts/PrivateRoute";
 
 function Profile() {
+  const navigate = useNavigate();
   const [profileData, setProfileData] = useState({
     image: null,
     full_name: "",
@@ -19,22 +21,23 @@ function Profile() {
   });
   const userId = useUserData()?.user_id;
 
-  const [imagePreview, setImagePreview] = useState(
-    "https://as1.ftcdn.net/v2/jpg/03/53/11/00/1000_F_353110097_nbpmfn9iHlxef4EDIhXB1tdTD0lcWhG9.jpg"
-  );
   const [loading, setLoading] = useState(false);
 
   const fetchProfile = () => {
-    apiInstance.get(`user/profile/${userId}/`).then((res) => {
-      setProfileData(res.data);
-    });
+    (async () => {
+      try {
+        const res = await apiInstance.get(`user/profile/${userId}/`);
+        setProfileData(res.data);
+      } catch (error) {
+        Toast("error", "Error fetching profile data");
+        console.log(error);
+      }
+    })();
   };
 
   useEffect(() => {
     fetchProfile();
   }, []);
-
-  console.log(profileData);
 
   const handleProfileChange = (event) => {
     setProfileData({
@@ -43,53 +46,54 @@ function Profile() {
     });
   };
 
-  const handleFileChange = (event) => {
-    const selectedFile = event.target.files[0];
-    setProfileData({
-      ...profileData,
-      [event.target.name]: selectedFile,
-    });
-
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setImagePreview(reader.result);
-    };
-    if (selectedFile) {
-      reader.readAsDataURL(selectedFile);
-    }
-  };
-
   const handleFormSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
 
-    const res = await apiInstance.get(`user/profile/${userId}/`);
-
-    const formData = new FormData();
-    if (profileData.image && profileData.image !== res.data.image) {
-      formData.append("image", profileData.image);
-    }
-    formData.append("full_name", profileData.full_name);
-    formData.append("about", profileData.about);
-    formData.append("facebook", profileData.facebook);
-    formData.append("twitter", profileData.twitter);
-    formData.append("country", profileData.country);
-
     try {
-      const res = await apiInstance.patch(`user/profile/${userId}/`, formData, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
-      Toast("success", "Profile updated successfully", "");
-      setLoading(false);
+      const formData = new FormData();
+
+      // Only append text fields that are not related to the user object
+      if (profileData.about) formData.append("about", profileData.about);
+      if (profileData.bio) formData.append("bio", profileData.bio);
+      if (profileData.country) formData.append("country", profileData.country);
+      if (profileData.facebook)
+        formData.append("facebook", profileData.facebook);
+      if (profileData.twitter) formData.append("twitter", profileData.twitter);
+
+      if ([...formData.entries()].length > 0) {
+        // console.log("FormData contents:");
+        // for (let pair of formData.entries()) {
+        //   console.log(pair[0] + ": " + pair[1]);
+        // }
+        const response = await apiInstance.patch(
+          `user/update-profile/${userId}/`,
+          formData,
+          {
+            headers: {
+              "Content-Type": "multipart/form-data",
+            },
+          }
+        );
+
+        if (response.status === 200) {
+          Toast("success", "Profile updated successfully");
+          fetchProfile();
+          navigate("/");
+        }
+      } else {
+        Toast("info", "No changes to update");
+      }
     } catch (error) {
-      console.error("Error updating profile:", error);
-      Toast("error", "An Error Occured", "");
+      Toast("error", error.response?.data?.message || "Error updating profile");
+      console.error("Error details:", error.response?.data);
+    } finally {
+      setLoading(false);
     }
   };
 
   console.log(profileData);
+
   return (
     <PrivateRoute>
       <Header />
@@ -108,41 +112,7 @@ function Profile() {
                 </div>
                 {/* Card body */}
                 <form className="card-body" onSubmit={handleFormSubmit}>
-                  <div className="d-lg-flex align-items-center justify-content-between">
-                    <div className="d-flex align-items-center mb-4 mb-lg-0">
-                      <img
-                        src={imagePreview || profileData?.image}
-                        id="img-uploaded"
-                        className="avatar-xl rounded-circle"
-                        alt="avatar"
-                        style={{
-                          width: "100px",
-                          height: "100px",
-                          borderRadius: "50%",
-                          objectFit: "cover",
-                        }}
-                      />
-
-                      <div className="ms-3">
-                        <h4 className="mb-0">Your avatar</h4>
-                        <p className="mb-0">
-                          PNG or JPG no bigger than 800px wide and tall.
-                        </p>
-                        <input
-                          type="file"
-                          name="image"
-                          className="form-control mt-3"
-                          onChange={handleFileChange}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <hr className="my-5" />
                   <div>
-                    <h4 className="mb-0">Personal Details</h4>
-                    <p className="mb-4">
-                      Edit your personal information and address.
-                    </p>
                     {/* Form */}
                     <div className="row gx-3">
                       {/* full name */}
@@ -158,7 +128,8 @@ function Profile() {
                           required=""
                           onChange={handleProfileChange}
                           name="full_name"
-                          value={profileData.user?.full_name}
+                          value={profileData?.user?.full_name}
+                          disabled
                         />
                         <div className="invalid-feedback">
                           Please enter first name.

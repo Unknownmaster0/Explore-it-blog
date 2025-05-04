@@ -7,6 +7,7 @@ import apiInstance from "../../utils/axios";
 import useUserData from "../../plugin/useUserData";
 import moment from "../../plugin/Moment";
 import PrivateRoute from "../../layouts/PrivateRoute";
+import Toast from "../../plugin/Toast";
 
 function Posts() {
   const [posts, setPosts] = useState([]);
@@ -56,7 +57,26 @@ function Posts() {
     setPosts(sortedPosts);
   };
 
-  // console.log(posts)
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) {
+      return;
+    }
+
+    try {
+      const response = await apiInstance.delete(
+        `author/dashboard/update-post/${userId}/${postId}/`
+      );
+
+      if (response.status === 200) {
+        Toast("success", response.data.message);
+        fetchPosts(); // Refresh the posts list
+      }
+    } catch (error) {
+      Toast("error", error.response?.data?.message || "Error deleting post");
+    }
+  };
+
+  console.log(posts)
 
   return (
     <PrivateRoute>
@@ -150,7 +170,7 @@ function Posts() {
                             <td>
                               <Link to={`/detail/${p.slug}/`}>
                                 <img
-                                  src={p.image}
+                                  src={p.image_url}
                                   style={{
                                     width: "100px",
                                     height: "100px",
@@ -164,7 +184,7 @@ function Posts() {
                             <td>
                               <h6 className="mt-2 mt-md-0 mb-0 ">
                                 <Link
-                                  to={`/${p.slug}/`}
+                                  to={`/detail/${p.slug}/`}
                                   className="text-dark text-decoration-none"
                                 >
                                   {p?.title}
@@ -199,14 +219,16 @@ function Posts() {
                                 >
                                   <i className="bi bi-pencil-square" />
                                 </Link>
-                                <Link
+                                <button
+                                  onClick={() => handleDeletePost(p.id)}
                                   className="btn-round mb-0 btn btn-danger"
                                   data-bs-toggle="tooltip"
                                   data-bs-placement="top"
                                   title="Delete"
+                                  type="button"
                                 >
                                   <i className="bi bi-trash" />
-                                </Link>
+                                </button>
                               </div>
                             </td>
                           </tr>

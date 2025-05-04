@@ -54,6 +54,26 @@ function Dashboard() {
     Toast("success", "Notification Seen", "");
   };
 
+  const handleDeletePost = async (postId) => {
+    if (!window.confirm("Are you sure you want to delete this post?")) {
+      return;
+    }
+
+    try {
+      const response = await apiInstance.delete(
+        `author/dashboard/update-post/${userId}/${postId}/`
+      );
+
+      if (response.status === 200) {
+        Toast("success", response.data.message);
+        // Refresh posts list after deletion
+        fetchDashboardData();
+      }
+    } catch (error) {
+      Toast("error", error.response?.data?.message || "Error deleting post");
+    }
+  };
+
   return (
     <PrivateRoute>
       <Header />
@@ -134,7 +154,7 @@ function Dashboard() {
                     <div key={index} className="mb-3">
                       <div className="d-flex">
                         <img
-                          src={p.image}
+                          src={p.image_url}
                           style={{
                             width: "100px",
                             height: "100px", // Made square
@@ -368,24 +388,19 @@ function Dashboard() {
                             </td>
                             <td>
                               <div className="d-flex gap-2">
-                                <a
-                                  href="#"
-                                  className="btn-round mb-0 btn btn-danger"
-                                  data-bs-toggle="tooltip"
-                                  data-bs-placement="top"
-                                  title="Delete"
+                                <Link
+                                  to={`/edit-post/${p.id}`}
+                                  className="btn btn-sm btn-warning"
                                 >
-                                  <i className="bi bi-trash" />
-                                </a>
-                                <a
-                                  href="dashboard-post-edit.html"
-                                  className="btn btn-primary btn-round mb-0"
-                                  data-bs-toggle="tooltip"
-                                  data-bs-placement="top"
-                                  title="Edit"
+                                  <i className="fas fa-edit"></i>
+                                </Link>
+                                <button
+                                  onClick={() => handleDeletePost(p.id)}
+                                  className="btn btn-sm btn-danger"
+                                  type="button"
                                 >
-                                  <i className="bi bi-pencil-square" />
-                                </a>
+                                  <i className="fas fa-trash"></i>
+                                </button>
                               </div>
                             </td>
                           </tr>
