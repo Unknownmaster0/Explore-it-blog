@@ -24,24 +24,6 @@ function Comments() {
     fetchComment();
   }, []);
 
-  const handleSubmitReply = async (commentId) => {
-    try {
-      const response = await apiInstance.post(
-        `author/dashboard/reply-comment/`,
-        {
-          comment_id: commentId,
-          reply: reply,
-        }
-      );
-      console.log(response.data);
-      fetchComment();
-      Toast("success", "Reply Sent.", "");
-      setReply("");
-    } catch (error) {
-      console.log(error);
-      Toast("error", "Something Wrong");
-    }
-  };
 
   return (
     <PrivateRoute>
@@ -90,7 +72,7 @@ function Comments() {
                             <div className="mt-2">
                               <p className="mt-2">
                                 <span className="fw-bold me-2">
-                                  <i className="fas fa-arrow-right"></i>
+                                   <i className="fas fa-arrow-right"></i>
                                 </span>
                                 {c.comment}
                               </p>
