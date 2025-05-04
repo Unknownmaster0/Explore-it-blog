@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const apiInstance = axios.create({
-  baseURL: "http://127.0.0.1:8000/api/v1/",
+  baseURL: "https://explore-it.onrender.com/api/v1/" || "http://127.0.0.1:8000/api/v1/",
 
   timeout: 50000, // timeout after 5 seconds
 
