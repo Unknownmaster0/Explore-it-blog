@@ -1,11 +1,13 @@
 from django.contrib.auth.password_validation import validate_password
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+import cloudinary
+import cloudinary.uploader
 
 from api import models as api_models
 
+# Define a custom serializer that inherits from TokenObtainPairSerializer
 class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
     @classmethod
     # Define a custom method to get the token for a user
@@ -21,15 +23,20 @@ class MyTokenObtainPairSerializer(TokenObtainPairSerializer):
         # Return the token with custom claims
         return token
 
+# Define a serializer for user registration, which inherits from serializers.ModelSerializer
 class RegisterSerializer(serializers.ModelSerializer):
+    # Define fields for the serializer, including password and password2
     password = serializers.CharField(write_only=True, required=True, validators=[validate_password])
     password2 = serializers.CharField(write_only=True, required=True)
 
     class Meta:
+        # Specify the model that this serializer is associated with
         model = api_models.User
+        # Define the fields from the model that should be included in the serializer
         fields = ('full_name', 'email',  'password', 'password2')
 
     def validate(self, attrs):
+        # Define a validation method to check if the passwords match
         if attrs['password'] != attrs['password2']:
             # Raise a validation error if the passwords don't match
             raise serializers.ValidationError({"password": "Password fields didn't match."})
@@ -46,6 +53,7 @@ class RegisterSerializer(serializers.ModelSerializer):
         email_username, mobile = user.email.split('@')
         user.username = email_username
 
+        # Set the user's password based on the validated data
         user.set_password(validated_data['password'])
         user.save()
 
@@ -58,14 +66,48 @@ class UserSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class ProfileSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
+    
     class Meta:
         model = api_models.Profile
         fields = '__all__'
-
+        
     def to_representation(self, instance):
         response = super().to_representation(instance)
         response['user'] = UserSerializer(instance.user).data
+        # Add the image_url field to the response
+        if not response.get('image_url') and instance.image:
+            response['image_url'] = instance.image.url
         return response
+    
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = api_models.Profile
+        fields = ['image', 'bio', 'about', 'country', 'facebook', 'twitter']
+        extra_kwargs = {
+            'image': {'required': False},
+            'bio': {'required': False},
+            'about': {'required': False},
+            'country': {'required': False},
+            'facebook': {'required': False},
+            'twitter': {'required': False},
+        }
+
+    def update(self, instance, validated_data):
+        # if image is updated, update the image_url too.
+        if 'image' in validated_data:
+            uploaded_image = cloudinary.uploader.upload(validated_data['image'], folder='blog_posts/')
+            instance.image = uploaded_image
+            # Save the instance to update the image_url field in the database
+            instance.save()
+            instance.image_url = uploaded_image['secure_url']
+
+        for field, value in validated_data.items():
+            # Only update fields that were actually provided
+            if value is not None:
+                setattr(instance, field, value)
+        instance.save()
+        return instance
 
 class CategorySerializer(serializers.ModelSerializer):
     post_count = serializers.SerializerMethodField()
@@ -104,12 +146,13 @@ class CommentSerializer(serializers.ModelSerializer):
         else:
             self.Meta.depth = 1
 
+
 class PostSerializer(serializers.ModelSerializer):
     comments = CommentSerializer(many=True)
     
     class Meta:
         model = api_models.Post
-        fields = "__all__"
+        fields = '__all__'
 
     def __init__(self, *args, **kwargs):
         super(PostSerializer, self).__init__(*args, **kwargs)
@@ -118,6 +161,15 @@ class PostSerializer(serializers.ModelSerializer):
             self.Meta.depth = 0
         else:
             self.Meta.depth = 3
+
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        # Add the image_url field to the response
+        if not response.get('image_url') and instance.image:
+            response['image_url'] = instance.image.url
+        # include likes count
+        response['likes_count'] = instance.likes.count()
+        return response
 
 class PostUpdateSerializer(serializers.ModelSerializer):
     class Meta:
@@ -133,6 +185,10 @@ class PostUpdateSerializer(serializers.ModelSerializer):
         }
 
     def update(self, instance, validated_data):
+        # if image is updated, update the image_url too.
+        if 'image' in validated_data:
+            instance.image = validated_data.pop('image')
+
         for field, value in validated_data.items():
             # Only update fields that were actually provided
             if value is not None:
