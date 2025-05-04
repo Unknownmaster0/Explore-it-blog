@@ -191,7 +191,7 @@ function Detail() {
                     <div className="col-12 col-md-10 col-lg-8">
                       <div className="text-center mt-4 mb-5">
                         <img
-                          src={post.image}
+                          src={post.image_url}
                           alt={post.title}
                           className="img-fluid rounded shadow"
                           style={{

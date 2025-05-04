@@ -56,7 +56,7 @@ function AddPost() {
     setCreatePost({
       ...post,
       image: {
-        file: event.target.files[0],
+        file: selectedFile,
         preview: reader.result,
       },
     });
@@ -255,14 +255,11 @@ function AddPost() {
                           name="status"
                           className="form-select"
                         >
+                          <option value="">-------------</option>
                           <option value="Active">Active</option>
                           <option value="Draft">Draft</option>
                           <option value="Disabled">Disabled</option>
                         </select>
-                        <small>
-                          Help people find your posts by choosing categories
-                          that represent your post.
-                        </small>
                       </div>
                     </div>
                   </div>

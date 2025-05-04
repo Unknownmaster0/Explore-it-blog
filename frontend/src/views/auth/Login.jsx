@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import Header from "../partials/Header";
 import Footer from "../partials/Footer";
 import { Link, useNavigate } from "react-router-dom";
+import Toast from "../../plugin/Toast";
 
 import { login } from "../../utils/auth";
 
@@ -31,19 +32,13 @@ function Login() {
     try {
       const { error } = await login(bioData.email, bioData.password);
       if (error) {
-        Toast.fire({
-          icon: "error",
-          title: error,
-        });
+        Toast("error", "Login failed");
         resetForm();
       } else {
         navigate(location?.state?.from || "/dashboard");
       }
     } catch (err) {
-      Toast.fire({
-        icon: "error",
-        title: "Login failed",
-      });
+      Toast("error", "Login failed" + err.message);
     } finally {
       setIsLoading(false);
     }

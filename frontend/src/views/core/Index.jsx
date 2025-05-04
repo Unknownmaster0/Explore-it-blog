@@ -6,13 +6,15 @@ import { Link } from "react-router-dom";
 import Toast from "../../plugin/Toast";
 import moment from "../../plugin/Moment";
 import apiInstance from "../../utils/axios";
+import useUserData from "../../plugin/useUserData";
 
 function Index() {
   const [posts, setPosts] = useState([]);
+  const userId = useUserData()?.user_id;
 
   const fetchPosts = async () => {
-    const response = await apiInstance.get(`/post/list/`);
-    setPosts(response.data);
+    const res = await apiInstance.get(`posts/public/`);
+    setPosts(res.data);
   };
 
   // console.log(posts);
@@ -87,14 +89,14 @@ function Index() {
                         height: "160px",
                         objectFit: "cover",
                       }}
-                      src={p.image}
+                      src={p.image_url}
                       alt={p.title}
                     />
                   </div>
                   <div className="card-body px-3 pt-3">
                     <h4 className="card-title">
                       <Link
-                        to={`${p.slug}`}
+                        to={`/detail/${p.slug}`}
                         className="btn-link text-reset stretched-link fw-bold text-decoration-none"
                       >
                         {p.title?.slice(0, 32) + "..."}
