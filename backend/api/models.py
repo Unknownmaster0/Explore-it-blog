@@ -31,12 +31,6 @@ class User(AbstractUser):
 
 class Profile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
-    image = CloudinaryField('image', folder='blog_posts/', null=True, blank=True, 
-                            transformation={
-                                'quality': 'auto',
-                                'fetch_format': 'auto',
-                            })
-    image_url = models.URLField(max_length=500, null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
     about = models.TextField(null=True, blank=True)
     author = models.BooleanField(default=False)
@@ -58,11 +52,6 @@ def save_user_profile(sender, instance, **kwargs):
 
 post_save.connect(create_user_profile, sender=User)
 post_save.connect(save_user_profile, sender=User)
-
-def delete_profile_image(sender, instance, **kwargs):
-    if instance.image:
-        cloudinary.uploader.destroy(instance.image.public_id)
-post_save.connect(delete_profile_image, sender=Profile)
 
 class Category(models.Model):
     title = models.CharField(max_length=100)
